@@ -1,8 +1,9 @@
 module Motion
   class Layout
+
     def initialize(&block)
-      @verticals   = []
-      @horizontals = []
+      @verticals   = {}
+      @horizontals = {}
       @metrics     = {}
 
       yield self
@@ -21,12 +22,18 @@ module Motion
       @view = view
     end
 
-    def horizontal(horizontal)
-      @horizontals << horizontal
+    def horizontal(key, horizontal)
+      key ||= @horizontals.size
+      @horizontals[key] = horizontal
     end
 
-    def vertical(vertical)
-      @verticals << vertical
+    def vertical(key, vertical)
+      key ||= @verticals.size
+      @verticals[key] = vertical
+    end
+
+    def constraint(name)
+      @constraints[name]
     end
 
     private
@@ -39,15 +46,19 @@ module Motion
 
       views = @subviews.merge("superview" => @view)
 
-      constraints = []
-      constraints += @verticals.map do |vertical|
-        NSLayoutConstraint.constraintsWithVisualFormat("V:#{vertical}", options:NSLayoutFormatAlignAllCenterX, metrics:@metrics, views:views)
+      @verticals.map do |key, vertical|
+        constraints[key] = NSLayoutConstraint.constraintsWithVisualFormat("V:#{vertical}", options:NSLayoutFormatAlignAllCenterX, metrics:@metrics, views:views)
       end
-      constraints += @horizontals.map do |horizontal|
-        NSLayoutConstraint.constraintsWithVisualFormat("H:#{horizontal}", options:NSLayoutFormatAlignAllCenterY, metrics:@metrics, views:views)
+      @horizontals.map do |key, horizontal|
+        constraints[key] = NSLayoutConstraint.constraintsWithVisualFormat("H:#{horizontal}", options:NSLayoutFormatAlignAllCenterY, metrics:@metrics, views:views)
       end
 
-      @view.addConstraints(constraints.flatten)
+      @view.addConstraints(constraints.values.flatten)
     end
+
+    def constraints
+      @constraints ||= {}
+    end
+
   end
 end
